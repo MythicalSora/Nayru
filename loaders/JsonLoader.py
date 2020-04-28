@@ -7,7 +7,7 @@ def __read_file(loc: str):
     with open(loc, 'r') as f:
         return json.loads(f.read())
 
-def get_config(loc: str):
+def get_obj(loc: str):
     """
     This function returns a Python object based on the contents of a JSON file.
     """
