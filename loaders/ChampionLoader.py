@@ -14,30 +14,40 @@ class ChampionLoader:
         self.champion = {"name": champion.lower(), 'url': f'https://cdn.communitydragon.org/{patch}/champion/{champion.lower()}'}
 
 
-    async def __parse_champion(self, champion):
-        return self.champion['portrait']
+    async def __parse_champion(self, champion: object):
+        self.champion['name'] = champion['name']
+        self.champion['title'] = champion['title']
+        self.champion['desc'] = champion['shortBio']
+        self.champion['playstyle'] = champion['playstyleInfo']
+        self.champion['roles'] = []
+
+        for role in champion['roles']:
+            self.champion['roles'].append(role)
+        
+        return self.champion
 
     async def __get_champion(self):
         async with ai.ClientSession() as session:
             async with session.get(f'{self.champion["url"]}/data') as res:
-                if os.path.exists(f'./cache/portraits/{self.champion["name"]}.jpg') == False:
-                    if os.path.exists(self.cache['portraits']) == False:
-                        pathlib.Path(self.cache['portraits']).mkdir(parents=True, exist_ok=True)
-                    await self.__cache_portrait()
-                self.champion['portrait'] = os.path.abspath(f'{self.cache["portraits"]}{self.champion["name"]}.jpg')
-                return await self.__parse_champion(await res.json())
+                if res.status == 200:
+                    if os.path.exists(f'./cache/portraits/{self.champion["name"]}.jpg') == False:
+                        if os.path.exists(self.cache['portraits']) == False:
+                            pathlib.Path(self.cache['portraits']).mkdir(parents=True, exist_ok=True)
+                        await self.__cache_portrait()
+                    self.champion['portrait'] = os.path.abspath(f'{self.cache["portraits"]}{self.champion["name"]}.jpg')
+                    return await self.__parse_champion(await res.json())
+                else:
+                    return None
 
 
     async def __cache_portrait(self):
         """
         Caches Champion potrait for future use.
         """
-        print('active')
         async with ai.ClientSession() as session:
             async with session.get(f'{self.champion["url"]}/portrait') as res:
                 async with af.open(f'{self.cache["portraits"]}{self.champion["name"]}.jpg', 'wb') as f:
                     self.champion['portrait'] = os.path.abspath(f'{self.cache["portraits"]}{self.champion["name"]}.jpg')
-                    print(self.champion)
                     await f.write(await res.read())
                     await f.close()
 
